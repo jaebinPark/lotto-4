@@ -1,10 +1,10 @@
 {
   "name": "로또 KR Lab Pro",
-  "short_name": "Lotto KR",
+  "short_name": "Lotto Pro",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#F3EBD7",
-  "theme_color": "#2B2B2B",
+  "background_color": "#f6eade",
+  "theme_color": "#f6eade",
   "icons": [
     {
       "src": "./icons/app-icon-180.png",

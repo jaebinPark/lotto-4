@@ -1,0 +1,42 @@
+:root{
+  --bg:#f6eade;        /* 파스텔 베이지 */
+  --ink:#2b2b2b;
+  --card:#ffffff;
+  --muted:#e8dcd0;
+  --btn:#f1e4d7;       /* 모든 버튼 기본(옅은 베이지) */
+  --btn-strong:#8a6cf3;/* 당첨확인/QR 등 강조 버튼 */
+  --chip-yellow:#f8cc4d; --chip-blue:#6aa7ff; --chip-red:#ff8888; --chip-gray:#b9b9b9; --chip-green:#4bbf94;
+  --radius:20px; --shadow:0 8px 26px rgba(0,0,0,.06);
+}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system, BlinkMacSystemFont, Apple SD Gothic Neo, Segoe UI, Roboto, Pretendard, system-ui, sans-serif;}
+.container{max-width:760px;margin:0 auto;padding:18px 14px;}
+.bar{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;background:var(--card);
+  border-radius:28px;padding:12px 14px;box-shadow:var(--shadow);margin:8px 0 16px;}
+.bar .title{font-weight:900;text-align:center;font-size:22px}
+.icon-btn{display:flex;align-items:center;justify-content:center;height:40px;border-radius:12px;background:rgba(0,0,0,.05)}
+.card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:16px 18px;margin:14px 0}
+.menu{display:flex;flex-direction:column;gap:14px;min-height:40vh}
+.btn{display:block;text-align:center;text-decoration:none;color:var(--ink);background:var(--btn);
+  font-weight:800;border-radius:18px;padding:18px 22px;box-shadow:var(--shadow)}
+.btn-strong{background:var(--btn-strong);color:#fff}
+.row{display:flex;gap:10px;align-items:center}
+.row.center{justify-content:center}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chips.left{justify-content:flex-start}
+.chips.grid-7{display:grid;grid-template-columns:repeat(7, 1fr); gap:10px}
+.chip{min-width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:999px;
+  background:#fff;color:#000;border:2px solid #e1d5c9;font-weight:800}
+.chip.num{color:#fff;border:none}
+.chip.num.n1{background:var(--chip-yellow)} .chip.num.n2{background:var(--chip-blue)}
+.chip.num.n3{background:var(--chip-red)}    .chip.num.n4{background:var(--chip-gray)}
+.chip.num.n5{background:var(--chip-green)}
+.saved-block{border:2px dashed #e1d5c9;border-radius:16px;padding:12px;margin:14px 0}
+.saved-row{display:flex;gap:10px;margin:8px 0;flex-wrap:wrap}
+.saved-set{padding:8px;border-radius:12px;display:flex;align-items:center;gap:10px}
+.saved-set.on{background:#bfe8ff}
+.block-actions{margin-top:10px}
+.hint{opacity:.7;font-size:13px}
+.small{font-size:13px}
+*{touch-action:manipulation}
