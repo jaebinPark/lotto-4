@@ -16,6 +16,9 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     env:
       # Map secrets to env to avoid expression parsing issues in `if:`
       MAIL_FROM: ${{ secrets.MAIL_FROM }}
