@@ -1,89 +1,22 @@
-
 name: pages build and deployment
-
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
+on: { workflow_dispatch: {} }
+permissions: { contents: write, pages: write, id-token: write }
+concurrency: { group: pages, cancel-in-progress: true }
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    env:
-      # Map secrets to env to avoid expression parsing issues in `if:`
-      MAIL_FROM: ${{ secrets.MAIL_FROM }}
-      MAIL_TO: ${{ secrets.MAIL_TO }}
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      SMTP_PORT: ${{ secrets.SMTP_PORT }}
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASS: ${{ secrets.SMTP_PASS }}
-      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Fetch Lotto Draws (full/incremental with options)
-        run: |
-          python3 scripts/fetch_lotto.py --timeout 10 --retries 4 --retry-backoff 1.8 --sleep 0.12
-
-      - name: Print status
-        run: cat scripts/status.json || echo "no status.json"
-
-      - name: Commit updated data (if changed)
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add data/ scripts/status.json || true
-          git commit -m "ci: update lotto draws [skip ci]" || echo "no changes"
-          git push || echo "no push"
-
-      - name: Slack alert on errors
-        if: ${{ failure() && env.SLACK_WEBHOOK != '' }}
-        run: |
-          OK=$(jq -r '.ok' scripts/status.json || echo "true")
-          if [ "$OK" != "true" ]; then
-            curl -X POST -H 'Content-type: application/json'               --data '{"text":"❌ Lotto fetch failed"}'               "${SLACK_WEBHOOK}"
-          fi
-
-      - name: Send email on errors
-        if: ${{ failure() && env.MAIL_FROM != '' && env.MAIL_TO != '' && env.SMTP_HOST != '' && env.SMTP_PORT != '' && env.SMTP_USER != '' && env.SMTP_PASS != '' }}
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ env.SMTP_HOST }}
-          server_port: ${{ env.SMTP_PORT }}
-          secure: true
-          username: ${{ env.SMTP_USER }}
-          password: ${{ env.SMTP_PASS }}
-          subject: "lotto-4: build failed (#${{ github.run_number }})"
-          to: ${{ env.MAIL_TO }}
-          from: ${{ env.MAIL_FROM }}
-          html_body: |
-            ❌ lotto-4 build failed
-            Repo: ${{ github.repository }}
-            Run:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      - name: Fetch Lotto Draws
+        run: python3 scripts/fetch_lotto.py --timeout 10 --retries 4 --retry-backoff 1.8 --sleep 0.12
       - name: Configure Pages
         uses: actions/configure-pages@v4
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./
-
+        with: { path: ./ }
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

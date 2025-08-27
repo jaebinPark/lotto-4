@@ -1,0 +1,2 @@
+index.html의 </body> 바로 위에 아래 한 줄을 추가하세요 (app.bundle.js 뒤에 위치해야 함).
+<script src="js/patch.ui.v012.js?v=1012"></script>

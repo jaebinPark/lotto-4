@@ -1,16 +1,9 @@
 {
-  "name": "로또 KR Lab Pro",
-  "short_name": "Lotto Pro",
+  "name": "로또 6/45",
+  "short_name": "로또",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f6eade",
-  "theme_color": "#f6eade",
-  "icons": [
-    {
-      "src": "./icons/app-icon-180.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+  "background_color": "#0f1217",
+  "theme_color": "#101318",
+  "icons": []
 }
