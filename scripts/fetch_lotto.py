@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-동행복권 로또 6/45 수집 스크립트 v3
-- 백필(1→최신) 또는 증분 갱신
-- 범위 수집: --from, --to 지원 (예: --from 601 --to 1186)
-- 네트워크 안정화: timeout/retries/backoff/sleep, proxy
-- 1~3등 금액/인원 확장
-- 실행 종료 시 scripts/status.json에 결과 요약 저장
-출력:
-  data/draws.json (전체)
-  data/draws50.json (최근 600개; 앱 호환을 위해 파일명 유지)
+동행복권 로또 6/45 수집 스크립트 (정식)
+- 최초 백필 및 증분 갱신
+- 안정화: timeout / retries / backoff / sleep / proxy
+- 특정 범위 수집 (--from, --to)
+- 1~3등 금액/당첨인원 병합
+- 상태 파일 저장 (scripts/status.json)
 """
 import os, sys, json, time, datetime, urllib.request, urllib.error, re, argparse
 
@@ -31,10 +28,8 @@ def urlget(url, timeout=10, opener=None):
     return opener.open(req, timeout=timeout)
 
 def safe_int(x):
-    try:
-        return int(str(x).replace(",",""))
-    except:
-        return None
+    try: return int(str(x).replace(",",""))
+    except: return None
 
 def parse_amount(s:str):
     if not s: return None
@@ -61,13 +56,10 @@ def fetch_json(no:int, timeout:int, retries:int, sleep:float, backoff:float, ope
                     }
                 }
                 return rec
-            else:
-                raise ValueError("API returned non-success")
-        except Exception as e:
-            if attempt >= retries:
-                return None
-            time.sleep(delay)
-            delay = min(delay * backoff, 6.0)
+        except Exception:
+            if attempt >= retries: return None
+            time.sleep(delay); delay *= backoff
+    return None
 
 def fetch_bywin_top3(no:int, timeout:int, retries:int, sleep:float, backoff:float, opener):
     delay = sleep
@@ -89,123 +81,70 @@ def fetch_bywin_top3(no:int, timeout:int, retries:int, sleep:float, backoff:floa
                 m_win = re.search(r"([\d,]+)\s*명", row)
                 winners = safe_int(m_win.group(1)) if m_win else (safe_int(nums[0]) if nums else None)
                 return {"winners": winners, "amount": amount}
-            return {
-                "1": extract(info.get('1')),
-                "2": extract(info.get('2')),
-                "3": extract(info.get('3')),
-            }
+            return {"1":extract(info.get('1')),"2":extract(info.get('2')),"3":extract(info.get('3'))}
         except Exception:
             if attempt >= retries:
                 return {"1":{"winners":None,"amount":None},"2":{"winners":None,"amount":None},"3":{"winners":None,"amount":None}}
-            time.sleep(delay)
-            delay = min(delay * backoff, 6.0)
+            time.sleep(delay); delay *= backoff
+    return {"1":{"winners":None,"amount":None},"2":{"winners":None,"amount":None},"3":{"winners":None,"amount":None}}
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--timeout", type=int, default=10)
-    ap.add_argument("--retries", type=int, default=3)
-    ap.add_argument("--retry-backoff", type=float, default=1.6)
-    ap.add_argument("--sleep", type=float, default=0.10)
+    ap.add_argument("--retries", type=int, default=4)
+    ap.add_argument("--retry-backoff", type=float, default=1.8)
+    ap.add_argument("--sleep", type=float, default=0.12)
     ap.add_argument("--proxy", type=str, default=None)
-    ap.add_argument("--from", dest="from_no", type=int, default=None, help="수집 시작 회차")
-    ap.add_argument("--to", dest="to_no", type=int, default=None, help="수집 종료 회차")
+    ap.add_argument("--from", dest="from_no", type=int, default=None)
+    ap.add_argument("--to", dest="to_no", type=int, default=None)
     args = ap.parse_args()
 
     opener = build_opener(args.proxy)
-
     repo_root = os.getcwd()
-    data_dir = os.path.join(repo_root, "data")
-    os.makedirs(data_dir, exist_ok=True)
+    data_dir = os.path.join(repo_root, "data"); os.makedirs(data_dir, exist_ok=True)
     draws_path = os.path.join(data_dir, "draws.json")
     draws50_path = os.path.join(data_dir, "draws50.json")
     status_path = os.path.join(repo_root, "scripts", "status.json")
     os.makedirs(os.path.dirname(status_path), exist_ok=True)
 
-    # 기존 데이터 로드
     current = []
     if os.path.exists(draws_path):
-        try:
-            current = json.load(open(draws_path, "r", encoding="utf-8"))
-        except Exception:
-            current = []
+        try: current = json.load(open(draws_path,"r",encoding="utf-8"))
+        except: current = []
 
-    # 수집 범위 결정
-    if args.from_no is not None:
-        start_no = int(args.from_no)
-    else:
-        start_no = 1 if not current else int(current[-1].get("no", 0)) + 1
-
-    if args.to_no is not None and args.to_no >= start_no:
-        end_no = int(args.to_no)
-    else:
-        end_no = 10**9  # 사실상 최신까지
+    start_no = args.from_no or (1 if not current else int(current[-1].get("no",0))+1)
+    end_no = args.to_no or 10**9
 
     results = list(current)
-    failed = []
-    fetched_count = 0
-
-    no = start_no
-    consecutive_fail = 0
-    max_fail = 5
+    failed, fetched_count = [], 0
+    no, consecutive_fail, max_fail = start_no, 0, 5
 
     while no <= end_no:
-        rec = fetch_json(no, args.timeout, args.retries, args.sleep, args.retry_backoff, opener)
+        rec = fetch_json(no,args.timeout,args.retries,args.sleep,args.retry_backoff,opener)
         if rec:
-            top3 = fetch_bywin_top3(no, args.timeout, args.retries, args.sleep, args.retry_backoff, opener)
+            top3 = fetch_bywin_top3(no,args.timeout,args.retries,args.sleep,args.retry_backoff,opener)
             if top3:
-                rec["second"] = top3.get("2", {"winners":None,"amount":None})
-                rec["third"]  = top3.get("3", {"winners":None,"amount":None})
+                rec["second"], rec["third"] = top3.get("2"), top3.get("3")
                 fpage = top3.get("1")
                 if fpage:
                     rec["first"]["winners"] = rec["first"]["winners"] or fpage.get("winners")
                     rec["first"]["amount"]  = rec["first"]["amount"]  or fpage.get("amount")
             results.append(rec)
-            fetched_count += 1
-            consecutive_fail = 0
-            no += 1
-            time.sleep(args.sleep)
+            fetched_count += 1; consecutive_fail=0; no+=1; time.sleep(args.sleep)
         else:
-            failed.append(no)
-            consecutive_fail += 1
-            if consecutive_fail >= max_fail and args.to_no is None:
-                # 최신 부근에서 연속 실패면 최신 도달로 간주하고 종료
-                break
-            no += 1
-            time.sleep(max(args.sleep/2, 0.05))
+            failed.append(no); consecutive_fail+=1
+            if consecutive_fail>=max_fail and args.to_no is None: break
+            no+=1; time.sleep(max(args.sleep/2,0.05))
 
-    # 정렬
-    results = sorted({r["no"]: r for r in results if r and r.get("no")}.values(), key=lambda r: int(r["no"]))
+    results = sorted({r["no"]:r for r in results if r and r.get("no")}.values(), key=lambda r:int(r["no"]))
+    json.dump(results, open(draws_path,"w",encoding="utf-8"), ensure_ascii=False, indent=2)
+    tail = results[-600:] if len(results)>=600 else results
+    json.dump(tail, open(draws50_path,"w",encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    # 저장
-    with open(draws_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-
-    tail = results[-600:] if len(results) >= 600 else list(results)
-    with open(draws50_path, "w", encoding="utf-8") as f:
-        json.dump(tail, f, ensure_ascii=False, indent=2)
-
-    ok = len(failed) == 0
-    status = {
-        "ok": ok,
-        "fetched": fetched_count,
-        "failed_count": len(failed),
-        "failed_draws": failed,
-        "total_after": len(results),
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
-    }
-    with open(status_path, "w", encoding="utf-8") as f:
-        json.dump(status, f, ensure_ascii=False, indent=2)
-
+    status = {"ok": len(failed)==0,"fetched":fetched_count,"failed_count":len(failed),
+              "failed_draws":failed,"total_after":len(results),
+              "timestamp": datetime.datetime.utcnow().isoformat()+"Z"}
+    json.dump(status, open(status_path,"w",encoding="utf-8"), ensure_ascii=False, indent=2)
     print(f"[OK] draws.json: {len(results)} entries; fetched {fetched_count}, failed {len(failed)}")
 
-if __name__ == "__main__":
-    main()
-
-{
-"ok": true|false,
-"fetched": <성공 수집 건수>,
-"failed_count": <실패 회차 수>,
-"failed_draws": [ ... ],
-"total_after": <저장된 총 회차 수>,
-"timestamp": "UTC 시각"
-}
+if __name__=="__main__": main()
