@@ -1,5 +1,7 @@
-[Version] patch_0.025
-- Fix: .github/workflows/pages.yml missing jobs → full v4 workflow restored
-- Add: /favicon.ico placeholder to stop 404 warning
-- Keep: pastel beige theme base tokens
-Applied: 2025-08-28 15:02:38Z
+[Version] patch_0.026 (full-ui minimal)
+- Ensure UI renders even if data files are missing → never-blank home view
+- Home: latest draw card (balls + 1~3등), four main buttons
+- Prizes: last up to 50 rounds list
+- Saved/Recommend/Analysis: minimal stubs to avoid blank screens
+- Keep: GitHub Pages v4 workflow; expose window.VERSION='patch_0.026'
+Build: 2025-08-28 15:11:26Z
