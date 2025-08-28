@@ -1,18 +1,1 @@
-[Version] patch_0.022
-[Type] UI 정합 Hotfix(통합) — 0.020에서 누락/상이한 점 보완 + 0.021 포함
-
-[Changes]
-- 버튼 배경색 = 카드 배경색 동일화(합의안 준수)
-- 추천 화면 본문 미표시 문제(0.020) 종결: root.appendChild(c) 포함(0.021 내용 포함)
-- 경고 '카드' 시각: warnbar를 소형 카드 형태로 스타일링(붉은/파랑)
-- 홈 화면: 헤더 숨김 + 상단 30px 공백 클래스(.top-gap) 추가
-- QR 오버레이 헬퍼 showQROverlay(url) 의존부 보강(없을 시 자동 주입)
-- VERSION='patch_0.022' 하드코딩
-
-[Files]
-- styles.css — 색/오버레이/warnbar/card/home-top-gap 스타일
-- js/app.bundle.js — version/overlay helper/append container 보강
-
-[Verification]
-- CSS: '--btn: #FBF6F0', '.warnbar.red/.warnbar.blue', '.page.home .header{display:none}', '.top-gap{height:30px}'
-- JS: "const VERSION='patch_0.022'", 'function showQROverlay', 'root.appendChild(c);'
+patch_0.024_jsfix (rebuilt)

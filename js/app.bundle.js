@@ -1,1 +1,1 @@
-﻿PASTE_APP_JS_HERE
+// app bundle placeholder (rebuilt)
