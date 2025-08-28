@@ -1,7 +1,9 @@
-[Version] patch_0.026 (full-ui minimal)
-- Ensure UI renders even if data files are missing → never-blank home view
-- Home: latest draw card (balls + 1~3등), four main buttons
-- Prizes: last up to 50 rounds list
-- Saved/Recommend/Analysis: minimal stubs to avoid blank screens
-- Keep: GitHub Pages v4 workflow; expose window.VERSION='patch_0.026'
-Build: 2025-08-28 15:11:26Z
+[Version] patch_0.028 (persist-ui)
+- Guarantee UI renders on all pages even with zero data
+- Home: latest draw card (balls + bonus + 1~3등), fallback text
+- Prizes: latest up to 50 draws
+- Saved/Recommend/Analysis: interactive stubs (buttons work)
+- LocalStorage keys preserved: lotto:savedSets, lotto:excludeNumbers, lotto:recommendedSets
+- Kill old service workers on load to ensure newest assets
+- GitHub Pages v4 workflow included
+Build: 2025-08-28 15:28:46

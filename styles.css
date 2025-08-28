@@ -1,42 +1,18 @@
-:root{
-  --bg:#FAF4EC;
-  --card:#FBF6F0;
-  --text:#2E2A26;
-  --muted:#8A837C;
-  --chip: #FBF6F0;
-  --chip-border:#D9CFC4;
-  --brand: #A8843A;
-}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100%}
-body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Helvetica,Arial,sans-serif}
+:root{--bg:#FAF4EC;--card:#FBF6F0;--text:#2E2A26;--muted:#8A837C;--chip:#FBF6F0;--chip-border:#D9CFC4;--brand:#A8843A}
+*{box-sizing:border-box}html,body{margin:0;padding:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',Helvetica,Arial,sans-serif}
 #app{max-width:680px;margin:0 auto;padding:24px 16px 54px}
 .header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-radius:20px;margin-bottom:16px}
-.h-title{font-size:22px;font-weight:800}
-.h-btn{width:44px;height:44px;border-radius:14px;background:#eee;border:0;display:flex;align-items:center;justify-content:center}
+.h-title{font-size:22px;font-weight:800}.h-btn{width:44px;height:44px;border-radius:14px;background:#eee;border:0;display:flex;align-items:center;justify-content:center}
 .card{background:var(--card);border-radius:20px;padding:16px;margin:16px 0;box-shadow:0 6px 24px rgba(0,0,0,.06)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.btn{width:100%;padding:20px 16px;margin:14px 0;background:var(--card);border-radius:18px;border:0;font-weight:800;font-size:22px;color:var(--text)}
-.note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
-.top-gap{height:30px}
-.bottom-gap{height:30px}
+.btn{width:100%;padding:20px 16px;margin:14px 0;background:var(--card);border-radius:18px;border:0;font-weight:800;font-size:22px;color:var(--text);cursor:pointer}
+.note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}.top-gap{height:30px}.bottom-gap{height:30px}
 .chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
-.chip{min-width:44px;height:44px;padding:0 12px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;border:2px solid var(--chip-border);background:var(--chip);color:var(--text)}
-.chip.num-1{background:#F4C84D;color:#fff}
-.chip.num-2{background:#F4C84D;color:#fff}
-.chip.num-3{background:#F4C84D;color:#fff}
-/* 번호칩 색상: 1–10 노랑, 11–20 파랑, 21–30 빨강, 31–40 회색, 41–45 초록 */
 .ball{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900}
-.ball.g1{background:#F4C84D}
-.ball.g2{background:#4D87F4}
-.ball.g3{background:#F46D6D}
-.ball.g4{background:#A0A0A0}
-.ball.g5{background:#3AAA68}
+.ball.g1{background:#F4C84D}.ball.g2{background:#4D87F4}.ball.g3{background:#F46D6D}.ball.g4{background:#A0A0A0}.ball.g5{background:#3AAA68}
 .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;margin-bottom:6px}
-.prizes{margin-top:10px;color:#fff}
-.prizes .p{color:#fff;margin:2px 0}
+.prizes{margin-top:10px}.prizes .p{color:#2E2A26;margin:2px 0}
 .subtitle{font-size:18px;font-weight:800;margin-bottom:6px}
 .center{display:flex;align-items:center;justify-content:center}
-.red{color:#d33}
-.green{color:#2a8f4b}
-.badge{font-size:12px;color:#fff;background:#888;border-radius:999px;padding:3px 8px;margin-left:6px}
+.link{color:var(--brand);font-weight:700;text-decoration:underline;cursor:pointer}
