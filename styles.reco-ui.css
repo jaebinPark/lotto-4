@@ -1,0 +1,41 @@
+/* patch_0.031 — Responsive chips & safe layout for iPhone */
+/* Palette remains soft beige; chips auto-size and wrap without overflow */
+:root{
+  --chip: clamp(30px, 7.2vw, 40px);
+  --chip-gap: 10px;
+  --chip-font: clamp(14px, 3.6vw, 18px);
+}
+.chipboard{ display:flex; flex-wrap:wrap; gap:var(--chip-gap); align-items:flex-start; }
+.chip{
+  width:var(--chip); height:var(--chip); border-radius:50%;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:var(--chip-font); user-select:none;
+  white-space:nowrap; box-sizing:border-box;
+  border:2px solid rgba(46,42,38,.25);
+}
+/* number chips (neutral) */
+.chip--num{ background:#FBF6F0; color:#2E2A26; }
+/* lotto number color rules */
+.chip--yellow{ background:#F5C542; color:#fff;} /* 1–10 */
+.chip--blue  { background:#4B80FF; color:#fff;} /* 11–20 */
+.chip--red   { background:#FF6B6B; color:#fff;} /* 21–30 */
+.chip--gray  { background:#BFC3C7; color:#fff;} /* 31–40 */
+.chip--green { background:#31B46C; color:#fff;} /* 41–45 */
+.chip--excluded{ background:#FBF6F0 !important; color:#2E2A26 !important; border-color:#2E2A26; opacity:.9; }
+
+/* equal sized buttons row */
+.button-row{ display:flex; gap:16px; justify-content:space-between; flex-wrap:wrap; }
+.btn{ flex:1 1 0; padding:14px 16px; border-radius:16px; font-weight:800; font-size:16px;
+  background:#F7EFE6; color:#2E2A26; text-align:center; border:2px solid rgba(46,42,38,.15); }
+
+/* recommended sets list */
+.reco-block{ margin:14px 0 20px; padding:12px; border-radius:14px; background:rgba(255,255,255,.65);
+  box-shadow:0 4px 16px rgba(0,0,0,.06); }
+.reco-row{ display:flex; align-items:center; gap:var(--chip-gap); padding:8px 0; flex-wrap:wrap; }
+.badge{ padding:4px 8px; border-radius:999px; font-size:12px; font-weight:700; line-height:1; display:inline-block; }
+.badge--warn{ background:#FFE6E6; color:#C64040; } .badge--ok{ background:#E6F3FF; color:#2B6CB0; }
+
+/* guard: text never overflows cards; shrink slightly at narrow widths */
+.card, .panel { overflow:hidden; }
+.card * , .panel * { min-width:0; }
+h1,h2,h3,h4,h5,h6, .label, .meta { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
