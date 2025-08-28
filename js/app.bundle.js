@@ -1,1 +1,1 @@
-// app bundle placeholder (rebuilt)
+(()=>{const VERSION='patch_0.025';window.VERSION=VERSION;console.log('VERSION',VERSION);})();

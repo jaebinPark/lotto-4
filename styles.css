@@ -1,1 +1,2 @@
-/* styles placeholder (rebuilt) */
+:root{--bg:#FAF4EC;--card:#FBF6F0;--text:#2E2A26}
+body{background:var(--bg);color:var(--text);margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Helvetica,Arial,sans-serif}

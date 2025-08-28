@@ -1,1 +1,5 @@
-patch_0.024_jsfix (rebuilt)
+[Version] patch_0.025
+- Fix: .github/workflows/pages.yml missing jobs → full v4 workflow restored
+- Add: /favicon.ico placeholder to stop 404 warning
+- Keep: pastel beige theme base tokens
+Applied: 2025-08-28 15:02:38Z
