@@ -1,6 +1,6 @@
 /* Lotto PWA patch 0.020 — Full UI(1:1) + 0.019 hotfix + beige palette */
 (function(){
-  const VERSION = 'patch_0.020';
+  const VERSION='patch_0.022';
   const $ = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -202,6 +202,7 @@
     fab.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
     const show=()=>{ if(window.scrollY>200) fab.classList.add('show'); else fab.classList.remove('show'); };
     window.addEventListener('scroll', show, {passive:true}); show();
+    root.appendChild(c);
     document.body.appendChild(fab);
     document.body.classList.remove('no-scroll');
     return root;
@@ -273,6 +274,7 @@
     fab.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
     const show=()=>{ if(window.scrollY>200) fab.classList.add('show'); else fab.classList.remove('show'); };
     window.addEventListener('scroll', show, {passive:true}); show();
+    root.appendChild(c);
     document.body.appendChild(fab);
     document.body.classList.remove('no-scroll');
     return root;
@@ -283,6 +285,7 @@
     root.appendChild(header('추천', {home:true, back:true}));
     const c=document.createElement('div'); c.className='container';
 
+    const cardTop=document.createElement('div'); cardTop.className='card';
     const grid=document.createElement('div'); grid.className='exclude';
     const excl=new Set(store.get(LS.EXCL,[]));
     function isExcluded(n){ return excl.has(n); }
@@ -301,12 +304,12 @@
       return ch;
     }
     for(let n=1;n<=45;n++){ grid.appendChild(renderChip(n)); }
-    c.appendChild(grid);
+    cardTop.appendChild(grid);
 
     const r=document.createElement('div'); r.className='row'; r.style.marginTop='10px';
     const bReset=document.createElement('button'); bReset.className='btn ghost'; bReset.textContent='제외수 리셋';
     const bGo=document.createElement('button'); bGo.className='btn'; bGo.style.flex=1; bGo.textContent='추천';
-    r.appendChild(bReset); r.appendChild(bGo); c.appendChild(r);
+    r.appendChild(bReset); r.appendChild(bGo); cardTop.appendChild(r); c.appendChild(cardTop);
 
     const out=document.createElement('div'); out.className='grid'; out.style.marginTop='10px'; c.appendChild(out);
 
@@ -352,6 +355,7 @@
     fab.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
     const show=()=>{ if(window.scrollY>200) fab.classList.add('show'); else fab.classList.remove('show'); };
     window.addEventListener('scroll', show, {passive:true}); show();
+    root.appendChild(c);
     document.body.appendChild(fab);
     document.body.classList.remove('no-scroll');
     return root;
@@ -379,6 +383,7 @@
     fab.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
     const show=()=>{ if(window.scrollY>200) fab.classList.add('show'); else fab.classList.remove('show'); };
     window.addEventListener('scroll', show, {passive:true}); show();
+    root.appendChild(c);
     document.body.appendChild(fab);
     document.body.classList.remove('no-scroll');
     return root;
