@@ -1,0 +1,59 @@
+
+/* UX Guard - patch_0.030 */
+:root{
+  --chip-size-min: 28px;
+  --chip-size-max: 40px;
+  --chip-font-min: 12px;
+  --chip-font-max: 18px;
+  --btn-font-min: 16px;
+  --btn-font-max: 20px;
+  --gap-guard: 8px;
+}
+/* generic card containers */
+.card,.panel,.box,.lotto-card,.lotto-box{
+  contain: layout paint;
+  overflow: hidden;
+  border-radius: 16px;
+}
+/* 10-column grid helper */
+.grid-10,[data-grid="10"]{
+  display:grid;
+  grid-template-columns: repeat(10, minmax(0,1fr));
+  gap: var(--gap-guard);
+  align-items:center;
+}
+/* base chip styles */
+.chip,.numchip,.ball,.number-chip{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  aspect-ratio: 1/1;
+  border-radius:9999px;
+  min-width: var(--chip-size-min);
+  width: 100%;
+  max-width: var(--chip-size-max);
+  padding: 6px;
+  font-weight:700;
+  font-size: clamp(var(--chip-font-min), 2.8vw, var(--chip-font-max));
+  line-height:1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+/* numeric chip (exclude) */
+.numchip{ background:#FBF6F0; color:#2E2A26; border: 1px solid #E6DED3; }
+/* text truncation helpers */
+.truncate{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.wrap{ white-space:normal; overflow-wrap:anywhere; }
+/* scalable buttons/titles */
+.btn,.button,button{
+  font-size: clamp(var(--btn-font-min), 3.8vw, var(--btn-font-max));
+  line-height:1.2;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.h1,.h2,.h3,.title,.subtitle,.meta{
+  font-size: clamp(14px, 3.8vw, 22px);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+*{ min-width:0; } /* prevent unexpected overflow */
