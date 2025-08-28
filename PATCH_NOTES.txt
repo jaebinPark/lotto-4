@@ -1,9 +1,8 @@
-[Version] patch_0.028 (persist-ui)
-- Guarantee UI renders on all pages even with zero data
-- Home: latest draw card (balls + bonus + 1~3등), fallback text
-- Prizes: latest up to 50 draws
-- Saved/Recommend/Analysis: interactive stubs (buttons work)
-- LocalStorage keys preserved: lotto:savedSets, lotto:excludeNumbers, lotto:recommendedSets
-- Kill old service workers on load to ensure newest assets
-- GitHub Pages v4 workflow included
-Build: 2025-08-28 15:28:46
+[Version] patch_0.029
+- UI 확장: 추천 화면 10열 제외수 토글 + '제외수 리셋'은 추천세트 보존
+- 추천(30세트): 최근 회차/빈도/z-score 기반 가중 샘플 + 제약(최근 600회 4개이상 중복 금지, G1 최대2개)
+- 당첨번호 화면: 최신부터 50개 카드, 1~3등 금액/인원(필드 있을 때 표시)
+- 로컬 데이터 유지(localStorage keys 고정)
+- 서비스워커/캐시 강제 해제 -> 최신 번들 즉시 로드
+- GitHub Pages v4 워크플로 동봉
+Build: 2025-08-28 15:39:47

@@ -1,18 +1,40 @@
-:root{--bg:#FAF4EC;--card:#FBF6F0;--text:#2E2A26;--muted:#8A837C;--chip:#FBF6F0;--chip-border:#D9CFC4;--brand:#A8843A}
-*{box-sizing:border-box}html,body{margin:0;padding:0;height:100%}
-body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',Helvetica,Arial,sans-serif}
-#app{max-width:680px;margin:0 auto;padding:24px 16px 54px}
-.header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-radius:20px;margin-bottom:16px}
-.h-title{font-size:22px;font-weight:800}.h-btn{width:44px;height:44px;border-radius:14px;background:#eee;border:0;display:flex;align-items:center;justify-content:center}
-.card{background:var(--card);border-radius:20px;padding:16px;margin:16px 0;box-shadow:0 6px 24px rgba(0,0,0,.06)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.btn{width:100%;padding:20px 16px;margin:14px 0;background:var(--card);border-radius:18px;border:0;font-weight:800;font-size:22px;color:var(--text);cursor:pointer}
-.note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}.top-gap{height:30px}.bottom-gap{height:30px}
-.chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
-.ball{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900}
-.ball.g1{background:#F4C84D}.ball.g2{background:#4D87F4}.ball.g3{background:#F46D6D}.ball.g4{background:#A0A0A0}.ball.g5{background:#3AAA68}
-.meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px;margin-bottom:6px}
-.prizes{margin-top:10px}.prizes .p{color:#2E2A26;margin:2px 0}
-.subtitle{font-size:18px;font-weight:800;margin-bottom:6px}
+
+:root{
+  --bg:#F5EDE3; /* pastel beige */
+  --card:#FBF6F0; /* lighter beige */
+  --ink:#2E2A26;
+  --muted:#8c837a;
+  --chipborder:#2E2A26;
+  --shadow:0 6px 18px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;}
+.container{max-width:560px;margin:0 auto;padding:30px 18px 30px;}
+h1{font-size:22px;margin:0 0 14px;}
+.row{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.card h2{margin:0 0 10px;font-size:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:18px;background:var(--card);color:var(--ink);width:100%;border:none;font-size:22px;font-weight:700;box-shadow:var(--shadow);}
+.btn-row{display:flex;gap:12px}
+.btn-row .btn{flex:1}
+.small{font-size:13px;color:var(--muted)}
 .center{display:flex;align-items:center;justify-content:center}
-.link{color:var(--brand);font-weight:700;text-decoration:underline;cursor:pointer}
+.grid-nums{display:grid;grid-template-columns:repeat(10, 1fr);gap:10px}
+.num-chip, .ball{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:2px solid var(--chipborder);width:38px;height:38px;font-weight:800}
+.num-chip{background:#FBF6F0;color:var(--ink)}
+.ball{border:none;color:#fff}
+.ball.y{background:#f2c94c} /* 1-10 yellow */
+.ball.b{background:#4da3ff} /* 11-20 blue */
+.ball.r{background:#ff7575} /* 21-30 red */
+.ball.g{background:#b0b0b0} /* 31-40 gray */
+.ball.gr{background:#4caf50} /* 41-45 green */
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.badge.ok{background:#e3f2fd;color:#1565c0}
+.badge.warn{background:#ffebee;color:#c62828}
+.list{display:flex;flex-direction:column;gap:10px}
+.set-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.row-buttons{display:flex;gap:12px;margin-top:12px}
+.caption{font-size:12px;color:var(--muted)}
+.footer{display:flex;justify-content:center;margin-top:20px;color:var(--muted);font-size:13px}
+.hidden{display:none !important}
+.link{color:#1565c0;text-decoration:underline;cursor:pointer}

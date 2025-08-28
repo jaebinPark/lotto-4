@@ -2,23 +2,15 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
   <title>로또 KR Lab Pro</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#FAF4EC">
+  <meta name="theme-color" content="#F5EDE3"/>
+  <link rel="stylesheet" href="./styles.css?v=patch_0_029"/>
+  <link rel="icon" href="./favicon.ico"/>
 </head>
 <body>
-  <div id="app" class="container"></div>
-  <script>window.APP_BUILD='patch_0.028';</script>
-  <script>
-  // proactive: unregister any old service workers so UI always refreshes
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistrations().then(list=>{list.forEach(r=>r.unregister().catch(()=>{}));}).catch(()=>{});
-  }
-  </script>
-  <script src="js/app.bundle.js"></script>
+<script>window.APP_BUILD='patch_0.029';</script>
+<div id="app" class="container"></div>
+<script src="./js/app.bundle.js?v=patch_0_029" type="module"></script>
 </body>
 </html>

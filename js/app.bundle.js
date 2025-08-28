@@ -1,195 +1,346 @@
-(()=>{
-  const VERSION='patch_0.028'; window.VERSION=VERSION;
 
-  // ---------- utils
-  const qs=(s,el=document)=>el.querySelector(s);
-  const el=(tag,attrs={},children=[])=>{const e=document.createElement(tag);
-    for(const[k,v]of Object.entries(attrs||{})){
-      if(k==='class') e.className=v;
-      else if(k==='html') e.innerHTML=v;
-      else if(k.startsWith('on') && typeof v==='function') e.addEventListener(k.slice(2),v);
-      else e.setAttribute(k,v);
-    }
-    (Array.isArray(children)?children:[children]).filter(Boolean).forEach(c=>e.append(c.nodeType?c:document.createTextNode(c)));
-    return e;
-  };
-  const fmt=(n)=>n==null?'-':n.toLocaleString('ko-KR');
+// --- patch_0.029 core ---
+const VERSION = 'patch_0.029';
+console.log('VERSION', VERSION);
 
-  // ---------- data (draws + persistence)
-  const KEYS={
-    saved:'lotto:savedSets',
-    excluded:'lotto:excludeNumbers',
-    recommended:'lotto:recommendedSets',
-  };
-  function loadLS(key, dflt){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):dflt; }catch{return dflt} }
-  function saveLS(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch{} }
-
-  const store={
-    saved: loadLS(KEYS.saved, []),
-    excluded: loadLS(KEYS.excluded, []),
-    recommended: loadLS(KEYS.recommended, []),
-    save(){ saveLS(KEYS.saved,this.saved); saveLS(KEYS.excluded,this.excluded); saveLS(KEYS.recommended,this.recommended); }
-  };
-
-  async function fetchJSON(url){
-    try{
-      const r=await fetch(url,{cache:'no-store'});
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return await r.json();
-    }catch(e){ return null; }
+// Force-unregister old service workers & kill caches
+(async ()=>{
+  if ('serviceWorker' in navigator) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.unregister();
+    } catch(e){ console.warn('sw unregister fail', e); }
   }
-
-  async function loadDraws(){
-    // Try full draws first, fallback to draws50
-    let full = await fetchJSON('./data/draws.json');
-    if(!full){ full = await fetchJSON('./data/draws50.json'); }
-    if(!full){ return { draws:[], latest:null }; }
-    const arr = Array.isArray(full) ? full : (full.draws||[]);
-    const sorted = arr.slice().sort((a,b)=>(b.round||b.drwNo||0)-(a.round||a.drwNo||0));
-    const latest = sorted[0] || null;
-    return { draws:sorted.slice(0,50), latest };
+  if (window.caches) {
+    try {
+      const names = await caches.keys();
+      await Promise.all(names.map(n=>caches.delete(n)));
+    } catch(e){ console.warn('cache cleanup fail', e); }
   }
+})();
 
-  // ---------- render helpers
-  function ball(num){
-    const n=Number(num);
-    const cls = n<=10?'g1':n<=20?'g2':n<=30?'g3':n<=40?'g4':'g5';
-    return el('div',{class:'ball '+cls}, String(n).padStart(2,'0'));
+const KEYS = {
+  saved:'lotto:savedSets',
+  excluded:'lotto:excludeNumbers',
+  recommended:'lotto:recommendedSets'
+};
+
+// utilities
+const $ = (q,el=document)=>el.querySelector(q);
+const $$= (q,el=document)=>Array.from(el.querySelectorAll(q));
+const h = (tag, attrs={}, ...children)=>{
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs||{})) {
+    if (k==='class') e.className = v;
+    else if (k==='html') e.innerHTML = v;
+    else e.setAttribute(k,v);
   }
-  function prizeLine(label, amount, count){
-    return el('div',{class:'p'}, `${label} ${amount?fmt(amount)+'원':'-'} / ${count?fmt(count)+'명':'-'}`);
+  for (const c of children) {
+    if (c==null) continue;
+    e.appendChild(typeof c==='string'? document.createTextNode(c) : c);
   }
+  return e;
+};
 
-  // ---------- views
-  const Views={};
+function loadJSONSafely(url){
+  return fetch(url, {cache:'no-store'}).then(r=>{
+    if (!r.ok) return null;
+    return r.json();
+  }).catch(_=>null);
+}
 
-  Views.home=async(root)=>{
-    const {draws, latest}=await loadDraws();
-    root.append(el('div',{class:'top-gap'}));
-    const card=el('div',{class:'card'});
-    if(latest){
-      const round=latest.round||latest.drwNo||'-';
-      const date=latest.date||latest.drwNoDate||'';
-      const nums = latest.numbers||latest.drwtNo||latest.nums||[latest.drwtNo1,latest.drwtNo2,latest.drwtNo3,latest.drwtNo4,latest.drwtNo5,latest.drwtNo6].filter(Boolean);
-      const bonus = latest.bonus||latest.bnusNo;
-      card.append(el('div',{class:'subtitle'}, `${round}회차 ${date||''}`));
-      const row=el('div',{class:'chips'});
-      (nums||[]).forEach(n=>row.append(ball(n)));
-      if(bonus) row.append(ball(bonus));
-      card.append(row);
-      // prizes
-      const pwrap=el('div',{class:'prizes'});
-      // map prize fields (flexible)
-      const p1a=latest.prize1_amount||latest.firstWinAmount||latest.first_amount;
-      const p1c=latest.prize1_count||latest.firstWinCount||latest.first_count;
-      const p2a=latest.prize2_amount||latest.secondWinAmount||latest.second_amount;
-      const p2c=latest.prize2_count||latest.secondWinCount||latest.second_count;
-      const p3a=latest.prize3_amount||latest.thirdWinAmount||latest.third_amount;
-      const p3c=latest.prize3_count||latest.thirdWinCount||latest.third_count;
-      pwrap.append(prizeLine('1등',p1a,p1c));
-      pwrap.append(prizeLine('2등',p2a,p2c));
-      pwrap.append(prizeLine('3등',p3a,p3c));
-      card.append(pwrap);
-    }else{
-      card.append(el('div',{class:'subtitle'},'최근 회차 정보 없음'));
-      card.append(el('div',{},'데이터 수집 전입니다.'));
-    }
-    root.append(card);
+function getLocal(key, def){
+  try{ const v = localStorage.getItem(key); return v? JSON.parse(v): def; }catch(_){ return def; }
+}
+function setLocal(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(_){}
+}
 
-    // buttons
-    root.append(el('button',{class:'btn',onclick:()=>route('prizes')},'당첨번호'));
-    root.append(el('button',{class:'btn',onclick:()=>route('saved')},'저장번호'));
-    root.append(el('button',{class:'btn',onclick:()=>route('recommend')},'추천'));
-    root.append(el('button',{class:'btn',onclick:()=>route('analysis')},'분석'));
-    root.append(el('div',{class:'note center'},`patch ${VERSION}`));
-    root.append(el('div',{class:'bottom-gap'}));
-  };
+// number helpers
+const range = (a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const colorClass = (n)=> n<=10?'y': (n<=20?'b': (n<=30?'r': (n<=40?'g':'gr')));
 
-  Views.header=(title)=>{
-    const h=el('div',{class:'header'});
-    const homeBtn=el('button',{class:'h-btn',onclick:()=>route('home')},'🏠');
-    const backBtn=el('button',{class:'h-btn',onclick:()=>history.length>1?history.back():route('home')},'←');
-    h.append(homeBtn, el('div',{class:'h-title'},title), backBtn);
-    return h;
-  };
+const State = {
+  draws: [],
+  draws50: [],
+  last: null,
+  loaded: false
+};
 
-  Views.prizes=async(root)=>{
-    root.append(Views.header('당첨번호'));
-    const {draws}=await loadDraws();
-    if(!draws.length){
-      root.append(el('div',{class:'card'},[el('div',{class:'subtitle'},'데이터가 아직 없습니다.'), el('div',{},'토요일 20:35 이후 자동 수집됩니다.') ]));
-      return;
-    }
-    draws.slice(0,50).forEach(d=>{
-      const card=el('div',{class:'card'});
-      const round=d.round||d.drwNo||'-';
-      const date=d.date||d.drwNoDate||'';
-      card.append(el('div',{class:'subtitle'},`${round}회차 ${date||''}`));
-      const nums = d.numbers||d.drwtNo||d.nums||[d.drwtNo1,d.drwtNo2,d.drwtNo3,d.drwtNo4,d.drwtNo5,d.drwtNo6].filter(Boolean);
-      const bonus = d.bonus||d.bnusNo;
-      const row=el('div',{class:'chips'});
-      (nums||[]).forEach(n=>row.append(ball(n)));
-      if(bonus) row.append(ball(bonus));
-      card.append(row);
-      const pwrap=el('div',{class:'prizes'});
-      const p1a=d.prize1_amount||d.firstWinAmount||d.first_amount;
-      const p1c=d.prize1_count||d.firstWinCount||d.first_count;
-      const p2a=d.prize2_amount||d.secondWinAmount||d.second_amount;
-      const p2c=d.prize2_count||d.secondWinCount||d.second_count;
-      const p3a=d.prize3_amount||d.thirdWinAmount||d.third_amount;
-      const p3c=d.prize3_count||d.thirdWinCount||d.third_count;
-      pwrap.append(prizeLine('1등',p1a,p1c));
-      pwrap.append(prizeLine('2등',p2a,p2c));
-      pwrap.append(prizeLine('3등',p3a,p3c));
-      card.append(pwrap);
-      root.append(card);
-    });
-  };
+async function initData(){
+  const d1 = await loadJSONSafely('./data/draws.json');
+  const d2 = await loadJSONSafely('./data/draws50.json');
+  State.draws = Array.isArray(d1)? d1 : [];
+  State.draws50 = Array.isArray(d2)? d2 : [];
+  State.last = State.draws && State.draws[0] ? State.draws[0] : null; // assume descending by recent
+  State.loaded = true;
+}
 
-  Views.saved=(root)=>{
-    root.append(Views.header('저장번호'));
-    const card=el('div',{class:'card'});
-    card.append(el('div',{class:'subtitle'},`저장된 세트 ${store.saved.length}개`));
-    if(!store.saved.length) card.append(el('div',{},'저장번호가 없습니다. 추천에서 저장해 보세요.'));
-    root.append(card);
-  };
+function header(title, opts={home:true, back:false}){
+  const row = h('div',{class:'row', style:'margin-bottom:12px'});
+  const left = h('button',{class:'btn', style:'width:56px;height:56px'}, '🏠');
+  const right= h('button',{class:'btn', style:'width:56px;height:56px'}, '←');
+  if (!opts.home) left.classList.add('hidden');
+  if (!opts.back) right.classList.add('hidden');
+  left.addEventListener('click', ()=>navigate('home'));
+  right.addEventListener('click', ()=>history.back());
+  row.append(left, h('h1',{}, title), right);
+  return row;
+}
 
-  Views.recommend=(root)=>{
-    root.append(Views.header('추천'));
-    const card=el('div',{class:'card'});
-    card.append(el('div',{class:'subtitle'},'추천 준비됨'));
-    const btn=el('button',{class:'btn',onclick:()=>{
-      // dummy add one recommended set to prove persistence
-      const r = Array.from({length:6},()=>Math.floor(Math.random()*45)+1).sort((a,b)=>a-b);
-      store.recommended.push(r);
-      store.save();
-      card.append(el('div',{},'추천 1세트 저장됨: '+r.join(', ')));
-    }},'추천 1세트 만들기');
-    card.append(btn);
-    const note=el('div',{class:'note'},`현재 추천 세트: ${store.recommended.length}개 (업데이트해도 유지)`);
-    card.append(note);
-    root.append(card);
-  };
-
-  Views.analysis=(root)=>{
-    root.append(Views.header('분석'));
-    const card=el('div',{class:'card'});
-    card.append(el('div',{class:'subtitle'},'분석 화면'));
-    card.append(el('div',{},'추가 지표는 다음 패치에서가 아니라, 요청 주시면 즉시 반영하여 새 ZIP으로 드립니다.'));
-    root.append(card);
-  };
-
-  // ---------- router
-  const routes={home:Views.home, prizes:Views.prizes, saved:Views.saved, recommend:Views.recommend, analysis:Views.analysis};
-  async function route(name){
-    const root = qs('#app'); root.innerHTML='';
-    if(routes[name]) await routes[name](root); else await routes.home(root);
-    history.replaceState({name},'',location.pathname+'#'+name);
+function cardLatest(draw){
+  const card = h('div',{class:'card'});
+  if (!draw){
+    card.append(h('div',{class:'small'}, '최근 회차 정보 없음'), h('div',{class:'small'}, '데이터 수집 전입니다.'));
+    return card;
   }
-  window.addEventListener('popstate',()=>{
-    const name=(location.hash||'#home').slice(1);
-    route(name);
+  const head = h('div',{class:'row'});
+  head.append(h('h2',{}, `${draw.round}회차 ${draw.date||''}`));
+  card.append(head);
+
+  const nums = (draw.numbers||[]).slice(0,6);
+  const bonus = draw.bonus;
+  const balls = h('div',{class:'row',style:'gap:10px;flex-wrap:wrap'});
+  nums.forEach(n=> balls.append(h('div',{class:`ball ${colorClass(n)}`}, String(n))));
+  if (bonus!=null) {
+    const b = h('div',{class:`ball ${colorClass(bonus)}`, style:'opacity:.8;position:relative'}, String(bonus));
+    balls.append(b);
+  }
+  card.append(balls);
+
+  const p1 = draw.prize1, p2=draw.prize2, p3=draw.prize3;
+  const mk = (p,rank)=> h('div',{class:'small'}, `${rank}등 ${p&&p.amount? p.amount.toLocaleString()+'원':'-'} / ${p&&p.winners!=null? p.winners+'명':'-명'}`);
+  card.append(mk(p1,1), mk(p2,2), mk(p3,3));
+  return card;
+}
+
+function pageHome(){
+  const root = $('#app'); root.innerHTML='';
+  root.append(header(''));
+
+  // top spacer 30px
+  root.append(h('div',{style:'height:30px'}));
+
+  root.append(cardLatest(State.last));
+
+  const btn = (text, go)=>{
+    const b = h('button',{class:'btn', style:'margin:14px 0'}, text);
+    b.addEventListener('click', ()=>navigate(go));
+    return b;
+  };
+  root.append(btn('당첨번호','wins'));
+  root.append(btn('저장번호','saved'));
+  root.append(btn('추천','recommend'));
+  root.append(btn('분석','analysis'));
+
+  root.append(h('div',{class:'footer'}, `patch ${VERSION}`));
+}
+
+function pageWins(){
+  const root = $('#app'); root.innerHTML='';
+  root.append(header('당첨번호',{home:true, back:true}));
+  root.append(cardLatest(State.last));
+
+  const listWrap = h('div',{class:'list'});
+  const draws = (State.draws||[]).slice(0,50);
+  draws.forEach(d=>{
+    const c = cardLatest(d);
+    listWrap.append(c);
   });
-  // boot
-  route((location.hash||'#home').slice(1));
+  root.append(listWrap);
+}
+
+function renderSetLine(set, warn=false){
+  const line = h('div',{class:'set-line'});
+  line.append(h('span',{class:`badge ${warn?'warn':'ok'}`}, warn?'WARN':'OK'));
+  set.forEach(n=> line.append(h('div',{class:`ball ${colorClass(n)}`}, String(n))));
+  return line;
+}
+
+function freqMap(draws){
+  const m = new Map();
+  for (const d of draws){
+    for (const n of (d.numbers||[]).slice(0,6)){
+      m.set(n, (m.get(n)||0)+1);
+    }
+  }
+  return m;
+}
+function zScores(map){
+  const all = range(1,45).map(n=> map.get(n)||0);
+  const mean = all.reduce((a,b)=>a+b,0)/all.length;
+  const sd = Math.sqrt(all.reduce((a,b)=>a+(b-mean)*(b-mean),0)/all.length)||1;
+  const z = new Map();
+  range(1,45).forEach(n=> z.set(n, ((map.get(n)||0)-mean)/sd));
+  return z;
+}
+
+function recommend30(excluded, drawsAll){
+  const out=[];
+  const draws600 = (drawsAll||[]).slice(0,600);
+  const last = drawsAll && drawsAll[0]? new Set(drawsAll[0].numbers||[]) : new Set();
+  const fm = freqMap(drawsAll||[]);
+  const zs = zScores(fm);
+  // groups
+  const G1 = last;
+  const G2 = new Set(range(1,45).filter(n=> (zs.get(n)||0)>=1.0));
+  const avg = [...fm.values()].reduce((a,b)=>a+b,0)/Math.max(fm.size,1);
+  const counts = n=> fm.get(n)||0;
+  // overdue approx: appear rarely
+  const G3 = new Set(range(1,45).filter(n=> counts(n)<=avg));
+  const G4 = new Set(range(1,45).filter(n=> !G1.has(n) && !G2.has(n) && !G3.has(n)));
+  const W = {G1:0.40, G2:0.30, G3:0.15, G4:0.15};
+  const groupOf = (n)=> G1.has(n)?'G1': (G2.has(n)?'G2': (G3.has(n)?'G3':'G4'));
+  const baseWeight = (n)=>{
+    const g = groupOf(n);
+    return (W[g]||0.1) * (1 + 0.05*(fm.get(n)||0) + 0.04*(zs.get(n)||0));
+  };
+  const pop = range(1,45).filter(n=> !excluded.has(n));
+  const weights = pop.map(n=> baseWeight(n));
+  const sumW = weights.reduce((a,b)=>a+b,0) || 1;
+  const prob = weights.map(w=> w/sumW);
+
+  function sample6(){
+    const picked=[]; const pickedSet=new Set();
+    let g1count=0;
+    const cand=pop.slice(); const p=prob.slice();
+    function takeOne(){
+      // weighted pick
+      let r=Math.random(); let acc=0;
+      for (let i=0;i<cand.length;i++){
+        acc+=p[i];
+        if (r<=acc){
+          const n=cand.splice(i,1)[0]; const w=p.splice(i,1)[0];
+          return n;
+        }
+      }
+      return cand.pop();
+    }
+    while (picked.length<6 && cand.length){
+      const n = takeOne();
+      if (pickedSet.has(n)) continue;
+      const isG1 = last.has(n);
+      if (isG1 && g1count>=2) continue; // G1 편중 제한
+      picked.push(n); pickedSet.add(n);
+      if (isG1) g1count++;
+    }
+    picked.sort((a,b)=>a-b);
+    return picked;
+  }
+  function overlaps4(set, d){
+    const s=new Set(set);
+    let c=0; for (const n of (d.numbers||[]).slice(0,6)) if (s.has(n)) c++;
+    return c>=4;
+  }
+  function similar(a,b){
+    const s=new Set(a); let c=0; for (const x of b) if (s.has(x)) c++;
+    return c>=4; // avoid near-dup
+  }
+  while (out.length<30){
+    const s = sample6();
+    // constraints
+    if (draws600.some(d=> overlaps4(s,d))) continue;
+    if (out.some(t=> similar(s,t))) continue;
+    out.push(s);
+  }
+  return out;
+}
+
+function pageRecommend(){
+  const root = $('#app'); root.innerHTML='';
+  root.append(header('추천',{home:true, back:true}));
+
+  const excluded = new Set(getLocal(KEYS.excluded, []));
+  const recSaved = getLocal(KEYS.recommended, []);
+
+  const grid = h('div',{class:'card'});
+  grid.append(h('div',{class:'small'}, '제외수 (눌러서 토글, 10열 고정)'));
+  const g = h('div',{class:'grid-nums'});
+  range(1,45).forEach(n=>{
+    const active = excluded.has(n);
+    const chip = active? h('div',{class:`ball ${colorClass(n)}`, 'data-n':n}, String(n))
+                       : h('div',{class:'num-chip','data-n':n}, String(n));
+    chip.addEventListener('click', ()=>{
+      if (excluded.has(n)){ excluded.delete(n); }
+      else { excluded.add(n); }
+      setLocal(KEYS.excluded, Array.from(excluded));
+      pageRecommend(); // re-render
+    });
+    g.append(chip);
+  });
+  grid.append(g);
+
+  const row = h('div',{class:'row-buttons'});
+  const btnReset = h('button',{class:'btn'}, '제외수 리셋');
+  const btnGo = h('button',{class:'btn'}, '추천(30세트)');
+  row.append(btnReset, btnGo);
+  grid.append(row);
+
+  const info = h('div',{class:'caption'}, `현재 추천 세트: ${recSaved.length}개`);
+  grid.append(info);
+
+  const list = h('div',{class:'list'});
+
+  btnReset.addEventListener('click', ()=>{
+    setLocal(KEYS.excluded, []);
+    // 추천 세트는 그대로 둔다
+    pageRecommend();
+  });
+
+  btnGo.addEventListener('click', ()=>{
+    const sets = recommend30(excluded, State.draws);
+    const all = recSaved.concat(sets);
+    setLocal(KEYS.recommended, all);
+    pageRecommend();
+  });
+
+  // if we just generated, show last 30 only
+  if (recSaved.length){
+    const recent = recSaved.slice(-30);
+    const warn = (State.draws||[]).length<600;
+    recent.forEach(s=> list.append(renderSetLine(s, warn)));
+  }
+
+  root.append(grid, list);
+}
+
+function pageSaved(){
+  const root = $('#app'); root.innerHTML='';
+  root.append(header('저장번호',{home:true, back:true}));
+  const saved = getLocal(KEYS.saved, []);
+  const card = h('div',{class:'card'});
+  card.append(h('div',{class:'small'}, `현재 저장 세트: ${saved.length}개`));
+  if (!saved.length) card.append(h('div',{class:'small'}, '아직 저장된 번호가 없습니다.'));
+  else saved.slice(-30).forEach(s=> card.append(renderSetLine(s,false)));
+  root.append(card);
+}
+
+function pageAnalysis(){
+  const root = $('#app'); root.innerHTML='';
+  root.append(header('분석',{home:true, back:true}));
+  const len = (State.draws||[]).length;
+  const card = h('div',{class:'card'});
+  card.append(h('div',{}, `수집된 회차: ${len}회`));
+  if (len<600) card.append(h('div',{class:'small'}, '경고: 600회 미만 데이터로 추천 정확도가 낮을 수 있습니다.'));
+  root.append(card);
+}
+
+function navigate(where){
+  if (where==='home') pageHome();
+  else if (where==='wins') pageWins();
+  else if (where==='saved') pageSaved();
+  else if (where==='recommend') pageRecommend();
+  else if (where==='analysis') pageAnalysis();
+  history.replaceState({p:where},'', '#'+where);
+}
+
+window.addEventListener('popstate', ()=>{
+  const p = (location.hash||'').replace('#','')||'home';
+  navigate(p);
+});
+
+(async function main(){
+  await initData();
+  const p = (location.hash||'').replace('#','')||'home';
+  navigate(p);
 })();
