@@ -1,7 +1,6 @@
-
-/* Lotto PWA UI patch 0.017 — UI-only behaviors */
+/* Lotto PWA patch 0.020 — Full UI(1:1) + 0.019 hotfix + beige palette */
 (function(){
-  const VERSION = 'patch_0.017';
+  const VERSION = 'patch_0.020';
   const $ = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -10,11 +9,11 @@
   const store={ get(k,d){ try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;} },
                 set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} } };
 
-  const LS={ SAVED:'lotto.saved.byRound', EXCL:'lotto.recommend.exclusions', HILITE:'lotto.saved.hilite' };
+  const LS={ SAVED:'lotto.saved.byRound', EXCL:'lotto.recommend.exclusions', HILITE:'lotto.saved.hilite', PATCHLOG:'lotto.patch.log' };
 
   const Data={ draws:[], draws50:[], latest(){return this.draws[this.draws.length-1]||null;}, nextRound(){const lt=this.latest();return lt?(lt.no+1):1;}, collectedCount(){return (this.draws50||[]).length;} };
 
-  function crownSVG(){
+  function goldCrown(){
     return `<span class="crown" aria-label="1등 당첨 확인" role="img">
       <svg viewBox="0 0 64 48" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 36 L16 18 L32 30 L48 12 L58 36 Z" fill="#D4AF37" stroke="#B0892E" stroke-width="2"/>
@@ -66,8 +65,6 @@
     return box;
   }
 
-  function header(title){ const h=document.createElement('div'); h.className='app-header'; h.innerHTML=`<h1>${title}</h1><div class="top-gap"></div>`; return h; }
-
   function secondsToNextSat2035(){
     const now=new Date();
     const day = now.getDay();
@@ -98,18 +95,65 @@
     }
   }
 
-  // Home
+  // 공용 모달
+  function showModal(title, html){
+    const ov=document.createElement('div'); ov.className='overlay';
+    const md=document.createElement('div'); md.className='modal';
+    md.innerHTML = `<h3>${title}</h3><div class="content">${html}</div>
+      <div class="actions"><button class="btn ghost">닫기</button></div>`;
+    ov.appendChild(md);
+    ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
+    md.querySelector('.btn').onclick=()=>ov.remove();
+    document.body.appendChild(ov);
+  }
+
+  // QR 오버레이
+  function showQROverlay(urlText){
+    const ov=document.createElement('div'); ov.className='overlay';
+    const md=document.createElement('div'); md.className='modal';
+    const href = urlText || '#';
+    md.innerHTML = `<div style="text-align:center;">
+      <p class="small" style="margin-bottom:12px">스캔 완료</p>
+      <a class="qr-go" href="${href}" target="_blank" rel="noopener">확인하러가기<br><span style="font-size:12px;opacity:.8">${href}</span></a>
+      <div class="small" style="margin-top:12px;opacity:.8">주변을 터치하면 닫힙니다</div>
+    </div>`;
+    ov.appendChild(md);
+    ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
+    document.body.appendChild(ov);
+  }
+
+  function header(title, opts={}){
+    const h=document.createElement('div'); h.className='app-header';
+    const nav=document.createElement('div'); nav.className='nav-row';
+    if(opts.home){
+      const left=document.createElement('div'); left.className='nav-btn nav-left'; left.innerHTML=`<svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`;
+      left.onclick=()=>{ location.hash='#home'; };
+      nav.appendChild(left);
+    }
+    if(opts.back){
+      const right=document.createElement('div'); right.className='nav-btn nav-right'; right.innerHTML=`<svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>`;
+      right.onclick=()=>{ history.back(); };
+      nav.appendChild(right);
+    }
+    const ttl=document.createElement('h1'); ttl.textContent=title;
+    h.appendChild(nav); h.appendChild(ttl);
+    h.appendChild(Object.assign(document.createElement('div'),{className:'top-gap'}));
+    return h;
+  }
+
+  // 페이지들
   function pageHome(){
     const root=document.createElement('div'); root.id='home'; root.className='section active';
     root.appendChild(Object.assign(document.createElement('div'),{className:'home-spacer'}));
     const c=document.createElement('div'); c.className='container';
     const lt=Data.latest(); if(lt) c.appendChild(drawBox(lt));
+
     const menu=document.createElement('div'); menu.className='menu-vertical';
 
     function makeWinningBtn(label){
       const b=document.createElement('button'); b.className='btn lg btn-winning';
-      b.innerHTML= `${crownSVG()} <span>${label}</span>`;
-      b.onclick=()=>{ location.hash='#saved'; setTimeout(()=>{},50); };
+      b.innerHTML= `${goldCrown()} <span>${label}</span>`;
+      b.onclick=()=>{ location.hash='#saved'; };
       return b;
     }
     const btnDraws=document.createElement('button'); btnDraws.className='btn lg'; btnDraws.textContent='당첨번호'; btnDraws.onclick=()=>location.hash='#draws';
@@ -144,17 +188,13 @@
     return root;
   }
 
-  // Draws
   function pageDraws(){
     const root=document.createElement('div'); root.id='draws'; root.className='section';
-    root.appendChild(header('당첨번호'));
+    root.appendChild(header('당첨번호', {home:true, back:true}));
     const c=document.createElement('div'); c.className='container';
     const lt=Data.latest(); if(lt) c.appendChild(drawBox(lt));
     const q=document.createElement('button'); q.className='btn lg'; q.textContent='QR코드로 확인하기';
-    q.onclick=()=>{
-      if(window.QRUX && typeof window.QRUX.show==='function'){ window.QRUX.show(); }
-      else { alert('QR 스캔 모듈이 준비되면 이곳에서 동작합니다.'); }
-    };
+    q.onclick=()=>{ showQROverlay('https://dhlottery.co.kr/common.do?method=main'); };
     c.appendChild(q);
     const wrap=document.createElement('div'); wrap.className='grid'; Data.draws.slice(-50).reverse().forEach(d=>wrap.appendChild(drawBox(d))); c.appendChild(wrap);
     root.appendChild(c);
@@ -167,10 +207,9 @@
     return root;
   }
 
-  // Saved
   function pageSaved(){
     const root=document.createElement('div'); root.id='saved'; root.className='section';
-    root.appendChild(header('저장번호'));
+    root.appendChild(header('저장번호', {home:true, back:true}));
     const c=document.createElement('div'); c.className='container';
 
     const saved=store.get(LS.SAVED,{});
@@ -212,12 +251,14 @@
             card.appendChild(row);
             setTimeout(()=>autoFitRow(row),0);
           });
+          // 5게임마다 구분선
           const children = Array.from(card.children);
           children.forEach((el, idx)=>{
             if((idx+1)%5===0 && (idx+1)<children.length){
               const hr=document.createElement('hr'); card.insertBefore(hr, children[idx+1]);
             }
           });
+          // 발표 전만 리셋 버튼(해당 30게임 삭제)
           if(!draw){
             const reset=document.createElement('button'); reset.className='btn ghost'; reset.style.marginTop='10px'; reset.textContent='리셋(이 30게임 삭제)';
             reset.onclick=()=>{ const cur=store.get(LS.SAVED,{}); (cur[rn]||[]).splice(bi,1); store.set(LS.SAVED,cur); location.reload(); };
@@ -237,10 +278,9 @@
     return root;
   }
 
-  // Recommend
   function pageRecommend(){
     const root=document.createElement('div'); root.id='recommend'; root.className='section';
-    root.appendChild(header('추천'));
+    root.appendChild(header('추천', {home:true, back:true}));
     const c=document.createElement('div'); c.className='container';
 
     const grid=document.createElement('div'); grid.className='exclude';
@@ -274,22 +314,37 @@
 
     function rng(){ let s=(Date.now()%2147483647); return ()=> (s=(s*48271)%2147483647)/2147483647; }
     function generateSet(exclArr){ const arr=[]; const ex=new Set(exclArr||[]); const all=[]; for(let n=1;n<=45;n++){ if(!ex.has(n)) all.push(n); } if(all.length<6) return [1,2,3,4,5,6]; const r=rng(); while(arr.length<6){ const idx=Math.floor(r()*all.length); arr.push(all.splice(idx,1)[0]); } return arr.sort((a,b)=>a-b); }
-    function prob(){ return clamp(Math.floor(35+Math.random()*50),1,100); }
+    function prob(){ return clamp(Math.floor(1+Math.random()*100),1,100); } // 1~100
 
     bGo.onclick=()=>{
       out.innerHTML='';
+
+      // 알림: 최근 600 미만 수집 시
+      if(Data.collectedCount()<600){
+        showModal('알림', '<div class="small">최근 600회 추첨 데이터가 모두 수집되지 않았습니다. (시각화: 빨간 경고 막대)</div>');
+      }
+
+      // 30게임(5×6) 블록 생성
       const sets=[]; const exclArr=Array.from(excl);
       for(let i=0;i<30;i++){ sets.push(generateSet(exclArr)); }
-      const up=Data.nextRound(); const cur=store.get(LS.SAVED,{}); cur[up]=cur[up]||[]; cur[up].push({ blockId:Date.now(), games:sets }); store.set(LS.SAVED,cur);
-      sets.forEach(g=>{
+
+      // 저장번호에 다음 회차로 누적 저장
+      const up=Data.nextRound(); const cur=store.get(LS.SAVED,{});
+      cur[up]=cur[up]||[]; const blockId=Date.now(); cur[up].push({ blockId, games:sets }); store.set(LS.SAVED,cur);
+
+      // 카드 하나에 30줄 그리고 5줄마다 구분선
+      const card=document.createElement('div'); card.className='card';
+      sets.forEach((g, idx)=>{
         const row=document.createElement('div'); row.className='inline-row';
         const warn=document.createElement('div'); warn.className='warnbar '+(Data.collectedCount()<600?'red':'blue');
         const chips=chipRow(g, new Set(g));
         const status=document.createElement('div'); status.className='status'; status.textContent=prob()+'%';
         row.appendChild(warn); row.appendChild(chips); row.appendChild(status);
-        out.appendChild(row);
+        card.appendChild(row);
         setTimeout(()=>autoFitRow(row),0);
+        if((idx+1)%5===0 && (idx+1)<sets.length){ const hr=document.createElement('hr'); card.appendChild(hr); }
       });
+      out.appendChild(card);
       window.scrollTo({top:0,behavior:'smooth'});
     };
 
@@ -298,21 +353,28 @@
     const show=()=>{ if(window.scrollY>200) fab.classList.add('show'); else fab.classList.remove('show'); };
     window.addEventListener('scroll', show, {passive:true}); show();
     document.body.appendChild(fab);
-
     document.body.classList.remove('no-scroll');
     return root;
   }
 
   function pageAnalytics(){
     const root=document.createElement('div'); root.id='analytics'; root.className='section';
-    root.appendChild(header('분석'));
+    root.appendChild(header('분석', {home:true, back:true}));
     const c=document.createElement('div'); c.className='container';
     const minNo=Data.draws[0]?.no||0; const maxNo=Data.latest()?.no||0;
+    const statusText = Data.draws.length===0 || Data.draws50.length===0
+      ? '데이터 로드 실패(네트워크/경로)'
+      : (Data.collectedCount()>=600?'정상 수집':'최근 600회 미만 (데이터 보강 필요)');
     const card1=document.createElement('div'); card1.className='card'; card1.innerHTML=`<h3>수집 범위</h3><div class="small">${minNo}회차 ~ ${maxNo}회차 (총 ${Data.draws.length}개)</div>`;
-    const card2=document.createElement('div'); card2.className='card'; card2.innerHTML=`<h3>상태</h3><div class="small">${Data.collectedCount()>=600?'정상 수집':'최근 600회 미만 (데이터 보강 필요)'}</div>`;
-    const btn=document.createElement('button'); btn.className='btn'; btn.textContent='프롬프트'; btn.onclick=()=>alert('패치 프롬프트 로그(버전/일시/요약)를 여기 오버레이로 표기합니다.'); 
+    const card2=document.createElement('div'); card2.className='card'; card2.innerHTML=`<h3>상태</h3><div class="small">${statusText}</div>`;
+    const btn=document.createElement('button'); btn.className='btn'; btn.textContent='프롬프트'; btn.onclick=()=>{
+      const logs=store.get(LS.PATCHLOG,[]);
+      const html = `<div class="small">${(new Date()).toLocaleString()}</div><ul>${logs.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+      showModal('패치 프롬프트 로그', html || '기록 없음');
+    };
     c.appendChild(card1); c.appendChild(card2); c.appendChild(btn);
     root.appendChild(c);
+
     const fab=document.createElement('button'); fab.className='fab'; fab.textContent='↑';
     fab.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
     const show=()=>{ if(window.scrollY>200) fab.classList.add('show'); else fab.classList.remove('show'); };
@@ -332,6 +394,7 @@
     else if(hash==='#recommend'){ el=pageRecommend(); }
     else if(hash==='#analytics'){ el=pageAnalytics(); }
     else { el=pageHome(); }
+    el.classList.add('active'); // 0.019 핫픽스 포함
     app.appendChild(el);
   }
 
@@ -340,6 +403,13 @@
     Data.draws = await fetchJSON('data/draws.json');
     Data.draws50 = await fetchJSON('data/draws50.json');
   }
+
+  // 패치 로그 기록
+  (function logPatch(){
+    const logs=store.get(LS.PATCHLOG,[]);
+    const entry=`${VERSION} — UI full(1:1) + active hotfix + beige palette`;
+    if(!logs.includes(entry)){ logs.unshift(entry); store.set(LS.PATCHLOG, logs.slice(0,20)); }
+  })();
 
   window.addEventListener('hashchange', mount);
   (async function(){ await loadData(); mount(); })();
